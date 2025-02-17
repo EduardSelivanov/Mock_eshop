@@ -10,9 +10,6 @@ namespace WareHouse.Application.CQRS.RackCQRS.Queries
         public async Task<RackModel> Handle(GetRackByIdQuery request, CancellationToken cancellationToken)
         {
             RackModel rack = await _rackRepo.GetRack(request.id);
-            await Task.Delay(5000);
-
-
             return rack; 
         }
     }
