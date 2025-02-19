@@ -14,14 +14,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Marten" Version="7.37.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\WareHouse.Domain\WareHouse.Domain.csproj" />
+    <ProjectReference Include="..\Catalog.Domain\Catalog.Domain.csproj" />
 	  <Protobuf Include="..\..\Slots\SlotsService\Protos\slot.proto" GrpcServices="Client" />
-
-	  <!--C:\Users\Acer\VisulaStudioProjs\ShopMicroser\Services\Slots\SlotsService\Protos\slot.proto
-	  C:\Users\Acer\VisulaStudioProjs\ShopMicroser\Services\WareHouse\WareHouse.Domain\WareHouse.Domain.csproj-->
   </ItemGroup>
 
 </Project>

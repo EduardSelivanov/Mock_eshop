@@ -1,6 +1,18 @@
-var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
+using Carter;
+using Catalog.Application.Exts;
+using Catalog.Presentation.Exts;
+using CommonPractices.Carter;
 
-app.MapGet("/", () => "Hello World!");
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AppExsts(builder.Configuration);
+builder.Services.AddPrsnt();
+
+
+var app = builder.Build();
+app.UseCarterConfig();
+
+
+
 
 app.Run();

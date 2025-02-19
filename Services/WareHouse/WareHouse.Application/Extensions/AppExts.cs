@@ -1,6 +1,7 @@
 ﻿using CommonPractices.CQRS.Behaviours;
 using MapsterMapper;
 using Microsoft.Extensions.DependencyInjection;
+using SlotsService;
 
 
 
@@ -15,6 +16,11 @@ namespace WareHouse.Application.Extensions
             {
                 config.RegisterServicesFromAssembly(assembly);
                 config.AddOpenBehavior(typeof(LoggingBeh<,>));
+            });
+
+            services.AddGrpcClient<SlotsProtoService.SlotsProtoServiceClient>(client =>
+            {
+                client.Address = new Uri("https://localhost:7298");
             });
 
             services.AddSingleton<IMapper, Mapper>(); 

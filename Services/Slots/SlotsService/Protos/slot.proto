@@ -1,0 +1,76 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "SlotsService";
+
+package slot;
+
+service SlotsProtoService{
+	rpc CreateSlotsForRack (CreateSlotsReq) returns (CreateSlotsResp);
+	rpc AssignProductToSlot (AssignProdReq) returns (AssignProdResp);
+	rpc GetAvaliableSlot (GetAvailableSlotReq) returns (GetAvailableSlotResp);
+	rpc GetSlotBySKU (GetSlotBySKUReq) returns (GetSlotBySKUResp);
+	rpc MoveProdsFromDel (MoveProdFromDelReq) returns (MoveProdFromDelResp);
+	rpc EditRackAndMoveProds (EditRackReq) returns (EditRackResp);
+	rpc EditRackWithoutMoving (IncreaseRackReq) returns (IncreaseRackResp);
+}
+
+
+message CreateSlotsReq{
+	string rackId=1;
+	int32 rackX=2;
+	int32 rackY=3;
+}
+message CreateSlotsResp{
+	repeated string slotIds=1;
+}
+
+message EditRackReq{
+	string rackId=1;
+	int32 maxX=2;
+	int32 maxY=3;
+}
+message EditRackResp{
+	bool succes=1;
+}
+
+message IncreaseRackReq{
+	string rackId=1;
+	int32 oldX=2;
+	int32 oldY=3;
+	int32 newX=4;
+	int32 newY=5;
+} 
+message IncreaseRackResp{
+	bool succes=1;
+}
+
+
+message AssignProdReq{
+	string SKU =1;
+	google.protobuf.Timestamp date=2;
+}
+message AssignProdResp{
+	bool succes=1;
+}
+
+message GetAvailableSlotReq{}
+message GetAvailableSlotResp{
+	string slotId=1;
+}
+
+message GetSlotBySKUReq{
+	string SKU=1;
+}
+message GetSlotBySKUResp{
+	string slotId=1;
+	string rackId=2;
+}
+
+message MoveProdFromDelReq{
+	string rackId=1;
+	int32 placesTodel=2;
+}
+message MoveProdFromDelResp{
+	bool succes=1;
+}
