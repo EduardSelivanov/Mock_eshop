@@ -10,6 +10,6 @@ namespace WareHouse.Domain.Reopositories
         Task<IEnumerable<RackModel>> GetRacks(int page = 1, int pagesize = 10);
         Task<bool> EditRack();
         Task<bool> DeleteRack(RackModel rackToDelete);
-        Task<RackModel> GetRack(Guid rackId);
+        Task<RackModel> GetRack(Guid rackId,bool forEditing=false);
     }
 }

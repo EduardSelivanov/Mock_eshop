@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using SlotsService.Data;
 using SlotsService.Models;
+using System.Linq;
 
 namespace SlotsService.Services
 {
@@ -76,36 +77,43 @@ namespace SlotsService.Services
 
         public override async Task<EditRackResp> EditRackAndMoveProds(EditRackReq request, ServerCallContext context)
         {
-            List<SlotModel> slotsOnThisRack = await _context.SlotsTable.Where(slot => slot.OnRackId.Equals(Guid.Parse(request.RackId))).ToListAsync();
+            List<SlotModel> slotsOnThisRack = await _context.SlotsTable.Where(slot => slot.OnRackId.Equals(Guid.Parse(request.RackId))).ToListAsync(); //all slots on this rack
 
-            List<SlotModel> slotsAboveMax = slotsOnThisRack.Where(slot => slot.X > request.MaxX || slot.Y > request.MaxY).ToList();
+            //need to find slots above max  
+            var slotsAboveMAxOnThisRack=slotsOnThisRack.Where(slot => slot.X > request.MaxX || slot.Y > request.MaxY).ToList(); // allslots above max
 
-            List<SlotModel> freeSlotsOnThisRack = slotsOnThisRack.Where(slot => slot.IsFree).ToList();
+            // find free slots to delete it from list of empty slots
+            var freeSlotsAboveMaxOnThisRack = slotsAboveMAxOnThisRack.Where(slot => slot.IsFree).ToList();
 
-            List<SlotModel> occupiedSlotsAbove = slotsAboveMax.Where(s => s.IsFree == false).ToList();
+            //find busy slots above
+            var busySlotsAboveMaxOnThisRack= slotsAboveMAxOnThisRack.Where(slot => !slot.IsFree).ToList();
 
-            List<SlotModel> FreeSlots = await _context.SlotsTable.Where(s=>s.IsFree).ToListAsync();
+            //All free slots and after remove empty slots which are above
+            var FreeSlotsTotal = await _context.SlotsTable.Where(slot => slot.IsFree).ToListAsync();
+            foreach(var freeSlot in FreeSlotsTotal)
+            {
+                if (freeSlot.SlotId.Equals(freeSlotsAboveMaxOnThisRack.Any(slot => slot.SlotId.Equals(freeSlot.SlotId))))
+                {
+                    FreeSlotsTotal.Remove(freeSlot);
+                }
+            }
 
-            FreeSlots.RemoveAll(s => slotsAboveMax.Any(outof => outof.SlotId == s.SlotId));
-
-            if (FreeSlots.Count < occupiedSlotsAbove.Count)
+            //if not enough space just refuse request
+            if (FreeSlotsTotal.Count < busySlotsAboveMaxOnThisRack.Count)
             {
                 return new EditRackResp { Succes = false };
             }
 
-            if (freeSlotsOnThisRack.Count <= occupiedSlotsAbove.Count)
+
+            for(int i = 0; i < busySlotsAboveMaxOnThisRack.Count; i++)
             {
-                occupiedSlotsAbove = freeSlotsOnThisRack;
+                FreeSlotsTotal[i].SKU = busySlotsAboveMaxOnThisRack[i].SKU;
+                FreeSlotsTotal[i].IsFree = busySlotsAboveMaxOnThisRack[i].IsFree;
+                FreeSlotsTotal[i].ArriveDate = busySlotsAboveMaxOnThisRack[i].ArriveDate;
             }
 
-            for(int i = 0; i < occupiedSlotsAbove.Count; i++)
-            {
-                FreeSlots[i].SKU = occupiedSlotsAbove[i].SKU;
-                FreeSlots[i].IsFree = occupiedSlotsAbove[i].IsFree;
-                FreeSlots[i].ArriveDate = occupiedSlotsAbove[i].ArriveDate;
-            }
-
-            _context.RemoveRange(slotsAboveMax);
+            _context.RemoveRange(busySlotsAboveMaxOnThisRack);
+            _context.RemoveRange(freeSlotsAboveMaxOnThisRack);
             await _context.SaveChangesAsync();
 
             return new EditRackResp { Succes = true };

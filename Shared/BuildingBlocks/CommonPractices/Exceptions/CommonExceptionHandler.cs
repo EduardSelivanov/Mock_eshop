@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CommonPractices.Exceptions
 {
-    public class ExceptionHandler : IExceptionHandler
+    public class CommonExceptionHandler : IExceptionHandler
     {
         public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
         {

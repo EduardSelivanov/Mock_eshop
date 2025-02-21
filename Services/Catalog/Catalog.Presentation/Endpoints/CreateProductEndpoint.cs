@@ -1,6 +1,7 @@
 ﻿
 using Catalog.Application.CQRS.ProductCQRS.Commands;
 using CommonPractices.Carter;
+using CommonPractices.ResultHandler;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -14,8 +15,12 @@ namespace Catalog.Presentation.Endpoints
         {
             app.MapPost("api/products", async (CreateProdComm prod, ISender sender) =>
             {
-                string res = await sender.Send(prod);
-                return Results.Ok();
+                CustomResult<string> result = await sender.Send(prod);
+                if (!result.IsSuccess)
+                {
+                    return Results.BadRequest(result.ErrorMessage);
+                }
+                return Results.Ok(result.SuccessResponse);
             });
         }
     }

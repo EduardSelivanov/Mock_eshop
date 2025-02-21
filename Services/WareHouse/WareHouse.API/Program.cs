@@ -13,7 +13,7 @@ builder.Services.AddCarter();
 builder.Services.AddPresentation();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddAppExts();
-builder.Services.AddExceptionHandler<ExceptionHandler>();
+builder.Services.AddExceptionHandler<CommonExceptionHandler>();
 
 
 

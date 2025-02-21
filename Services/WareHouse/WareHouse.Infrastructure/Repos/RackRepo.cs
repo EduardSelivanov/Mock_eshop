@@ -1,7 +1,4 @@
-﻿
-using Microsoft.Build.Execution;
-using Microsoft.EntityFrameworkCore;
-using System.Runtime.CompilerServices;
+﻿using Microsoft.EntityFrameworkCore;
 using WareHouse.Domain.Models;
 using WareHouse.Domain.Reopositories;
 using WareHouse.Domain.WareHouseExceptions;
@@ -16,7 +13,7 @@ namespace WareHouse.Infrastructure.Repos
             RackModel assumedRack = await RetriveRackByName(newRack.RackName);
             if (assumedRack != null)
             {
-                throw new Exception();
+                throw new RackAlreadyExists("Rackname",assumedRack.RackName);
             }
             await _context.RackTable.AddAsync(newRack);
             await _context.SaveChangesAsync();
@@ -24,9 +21,9 @@ namespace WareHouse.Infrastructure.Repos
             return newRack.RackId;
         }
 
-        public async Task<RackModel> GetRack(Guid rackId)
+        public async Task<RackModel> GetRack(Guid rackId,bool forEditing=false)
         {
-            RackModel assumedRack = await RetriveRackbyId(rackId);
+            RackModel assumedRack = await RetriveRackbyId(rackId,forEditing);
             if (assumedRack is null)
             {
                 throw new RackNotFoundException(rackId); 
@@ -53,9 +50,15 @@ namespace WareHouse.Infrastructure.Repos
             await _context.SaveChangesAsync();
             return true;
         }
-        private async Task<RackModel> RetriveRackbyId(Guid id)
+        private async Task<RackModel> RetriveRackbyId(Guid id,bool forEditing=false)
         {
-            RackModel asumedRack = await _context.RackTable.FirstOrDefaultAsync(rack => rack.RackId.Equals(id));
+            IQueryable<RackModel> request = _context.RackTable.AsQueryable();
+            if (!forEditing)
+            {
+                request=request.AsNoTracking();
+            }
+
+            RackModel asumedRack = await request.FirstOrDefaultAsync(rack => rack.RackId.Equals(id));
             if (asumedRack == null)
             {
                 return null;

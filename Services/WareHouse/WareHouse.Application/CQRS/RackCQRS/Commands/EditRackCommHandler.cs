@@ -1,5 +1,4 @@
-﻿
-using CommonPractices.CQRS;
+﻿using CommonPractices.CQRS;
 using MapsterMapper;
 using SlotsService;
 using WareHouse.Domain.Models;
@@ -16,7 +15,7 @@ namespace WareHouse.Application.CQRS.RackCQRS.Commands
     {
         public async Task<bool> Handle(EditRackComm request, CancellationToken cancellationToken)
         {
-            RackModel assumedRack = await _rackRepo.GetRack(request.rackId);
+            RackModel assumedRack = await _rackRepo.GetRack(request.rackId,true);
 
             int diffX = request.RackX-assumedRack.RackX;
             int diffY = request.RackY-assumedRack.RackY;
@@ -44,7 +43,8 @@ namespace WareHouse.Application.CQRS.RackCQRS.Commands
             assumedRack.RackDescription = String.IsNullOrWhiteSpace(request.RackDescription)?assumedRack.RackDescription:request.RackDescription;
             assumedRack.RackX = request.RackX is 0?assumedRack.RackX:request.RackX;
             assumedRack.RackY = request.RackY is 0?assumedRack.RackY:request.RackY;
-            assumedRack.TotalPlaces = assumedRack.RackX * assumedRack.RackY;
+
+            //assumedRack.TotalPlaces = assumedRack.RackX * assumedRack.RackY;
 
             if (totaldiff<0)
             {

@@ -1,5 +1,4 @@
-﻿
-using Catalog.Domain.Models;
+﻿using Catalog.Domain.Models;
 using CommonPractices.CQRS;
 using Marten;
 
@@ -15,6 +14,7 @@ namespace Catalog.Application.CQRS.ProductCQRS.Queries
             {
                 return null;
             }
+
             return prod;
         }
     }

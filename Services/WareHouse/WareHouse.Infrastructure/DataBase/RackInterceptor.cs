@@ -5,7 +5,7 @@ using WareHouse.Domain.Models;
 
 namespace WareHouse.Infrastructure.DataBase
 {
-    internal class RackInceptor:SaveChangesInterceptor
+    internal class RackInterceptor:SaveChangesInterceptor
     {
         public override ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
         {

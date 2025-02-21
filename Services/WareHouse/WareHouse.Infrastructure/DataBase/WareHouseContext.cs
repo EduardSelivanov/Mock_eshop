@@ -6,6 +6,8 @@ namespace WareHouse.Infrastructure.DataBase
 {
     internal class WareHouseContext:DbContext
     {
+      
+
         public WareHouseContext(DbContextOptions<WareHouseContext> opts):base(opts)
         {
             
@@ -15,7 +17,7 @@ namespace WareHouse.Infrastructure.DataBase
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);
-            optionsBuilder.AddInterceptors(new RackInceptor());
+            optionsBuilder.AddInterceptors(new RackInterceptor());
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
