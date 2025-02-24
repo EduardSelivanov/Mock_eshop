@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using SlotsService.Data;
 using SlotsService.Models;
-using System.Linq;
 
 namespace SlotsService.Services
 {
@@ -77,26 +76,30 @@ namespace SlotsService.Services
 
         public override async Task<EditRackResp> EditRackAndMoveProds(EditRackReq request, ServerCallContext context)
         {
-            List<SlotModel> slotsOnThisRack = await _context.SlotsTable.Where(slot => slot.OnRackId.Equals(Guid.Parse(request.RackId))).ToListAsync(); //all slots on this rack
+            List<SlotModel> slotsOnThisRack = await _context.SlotsTable
+                .Where(slot => slot.OnRackId.Equals(Guid.Parse(request.RackId)))
+                .ToListAsync(); //all slots on this rack
 
             //need to find slots above max  
-            var slotsAboveMAxOnThisRack=slotsOnThisRack.Where(slot => slot.X > request.MaxX || slot.Y > request.MaxY).ToList(); // allslots above max
+            List<SlotModel> slotsAboveMAxOnThisRack=slotsOnThisRack
+                .Where(slot => slot.X > request.MaxX || slot.Y > request.MaxY).ToList(); // allslots above max
 
             // find free slots to delete it from list of empty slots
-            var freeSlotsAboveMaxOnThisRack = slotsAboveMAxOnThisRack.Where(slot => slot.IsFree).ToList();
+            List<SlotModel> freeSlotsAboveMaxOnThisRack = slotsAboveMAxOnThisRack
+                .Where(slot => slot.IsFree).ToList();
 
             //find busy slots above
-            var busySlotsAboveMaxOnThisRack= slotsAboveMAxOnThisRack.Where(slot => !slot.IsFree).ToList();
+            List<SlotModel> busySlotsAboveMaxOnThisRack = slotsAboveMAxOnThisRack
+                .Where(slot => !slot.IsFree).ToList();
 
             //All free slots and after remove empty slots which are above
-            var FreeSlotsTotal = await _context.SlotsTable.Where(slot => slot.IsFree).ToListAsync();
-            foreach(var freeSlot in FreeSlotsTotal)
-            {
-                if (freeSlot.SlotId.Equals(freeSlotsAboveMaxOnThisRack.Any(slot => slot.SlotId.Equals(freeSlot.SlotId))))
-                {
-                    FreeSlotsTotal.Remove(freeSlot);
-                }
-            }
+            List<SlotModel> FreeSlotsTotal = await _context.SlotsTable
+                 .Where(slot => slot.IsFree)
+                 .ToListAsync();
+
+            FreeSlotsTotal.RemoveAll(freeSlot => freeSlotsAboveMaxOnThisRack
+                .Select(slot => slot.SlotId)
+                .Contains(freeSlot.SlotId));
 
             //if not enough space just refuse request
             if (FreeSlotsTotal.Count < busySlotsAboveMaxOnThisRack.Count)
@@ -164,12 +167,53 @@ namespace SlotsService.Services
             await _context.SaveChangesAsync();
 
             return new AssignProdResp { Succes = true };
-
-
-    //        Google.Protobuf.WellKnownTypes.Timestamp protoTimestamp
-    //= Google.Protobuf.WellKnownTypes.Timestamp.FromDateTime(DateTime.Now); //from c# to google
         }
 
+        public override async Task<GetSlotBySKUResp> GetSlotBySKU(GetSlotBySKUReq request, ServerCallContext context)
+        {
+            //need to return oldest sku
+            SlotModel? oldest =await _context.SlotsTable
+                .AsNoTracking()
+                .Where(slot=>slot.SKU.Equals(request.SKU))
+                .OrderBy(slot=>slot.ArriveDate)
+                .FirstOrDefaultAsync();
 
+            if (oldest == null)
+            {
+                return null;
+            }
+            GetSlotBySKUResp resp = new GetSlotBySKUResp()
+            {
+                RackId=oldest.OnRackId.ToString(),
+                Place=oldest.Place
+            };
+            return resp;
+        }
+
+        public override async Task<EditSlotBySKUResp> EditSlotBySKU(EditSlotBySKUReq request, ServerCallContext context)
+        {
+            var slots = await _context.SlotsTable.Where(slot=>slot.SKU.Equals(request.SKU)).ToListAsync();
+            slots.ForEach(slot => slot.SKU = request.NewSKU);
+            await _context.SaveChangesAsync();
+
+            return new EditSlotBySKUResp()
+            {
+                Succes = true
+            };            
+        }
+
+        public override async Task<EmptySlotBySKUResp> EmptySlotBySKU(EmptySlotBySKUReq request, ServerCallContext context)
+        {
+            List<SlotModel> slotsToClear = await _context.SlotsTable.Where(slot => slot.SKU.Equals(request.SKU)).ToListAsync();
+
+            slotsToClear.ForEach(slot => {
+                slot.SKU = null; 
+                slot.ArriveDate = null; 
+                slot.IsFree = true;
+            });
+
+            await _context.SaveChangesAsync();
+            return new EmptySlotBySKUResp { Succes = true };
+        }
     }
 }

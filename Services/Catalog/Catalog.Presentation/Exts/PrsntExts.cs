@@ -10,6 +10,9 @@ namespace Catalog.Presentation.Exts
         {
             services.AddCarter();
             services.AddSingleton<ICarterModule, CreateProductEndpoint>();
+            services.AddSingleton<ICarterModule, GetProductBySKUEndpoint>();
+            services.AddSingleton<ICarterModule, UpdateProductBySKUEndpoint>();
+            services.AddSingleton<ICarterModule, DeleteProductBySKUEndpoint>();
         }
     }
 }

@@ -1,9 +1,10 @@
-﻿
-using Catalog.Application.CQRS.ProductCQRS.Queries;
+﻿using Catalog.Application.CQRS.ProductCQRS.Queries;
 using CommonPractices.Carter;
+using CommonPractices.ResultHandler;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
 
 namespace Catalog.Presentation.Endpoints
@@ -12,10 +13,14 @@ namespace Catalog.Presentation.Endpoints
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapGet("/api/catalog",async (GetProdBySKUQuery req,ISender sender) =>
+            app.MapGet("api/products", async ([FromBody] GetProdBySKUQuery req,ISender sender) =>
             {
-                var tos = await sender.Send(req);
-                return Results.Ok();
+                CustomResult<string> result = await sender.Send(req);
+                if (!result.IsSuccess)
+                {
+                    return Results.BadRequest(result.ErrorMessage);
+                }
+                return Results.Ok(result.SuccessResponse);
             });
         }
     }

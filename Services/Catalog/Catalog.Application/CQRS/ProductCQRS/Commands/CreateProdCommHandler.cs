@@ -22,8 +22,6 @@ namespace Catalog.Application.CQRS.ProductCQRS.Commands
                 Price=request.price
             };
 
-      
-
             AssignProdReq toWarehouse = new AssignProdReq()
             {
                 SKU=request.sku,
@@ -37,6 +35,7 @@ namespace Catalog.Application.CQRS.ProductCQRS.Commands
             }
 
             session.Store(newProd);
+            await session.SaveChangesAsync();
             return CustomResult<string>.Success("Added to warehouse");
         }
     }

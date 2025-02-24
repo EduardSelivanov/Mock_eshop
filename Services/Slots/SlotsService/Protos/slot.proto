@@ -10,6 +10,8 @@ service SlotsProtoService{
 	rpc AssignProductToSlot (AssignProdReq) returns (AssignProdResp);
 	rpc GetAvaliableSlot (GetAvailableSlotReq) returns (GetAvailableSlotResp);
 	rpc GetSlotBySKU (GetSlotBySKUReq) returns (GetSlotBySKUResp);
+	rpc EditSlotBySKU (EditSlotBySKUReq) returns (EditSlotBySKUResp);
+	rpc EmptySlotBySKU (EmptySlotBySKUReq) returns (EmptySlotBySKUResp);
 	rpc MoveProdsFromDel (MoveProdFromDelReq) returns (MoveProdFromDelResp);
 	rpc EditRackAndMoveProds (EditRackReq) returns (EditRackResp);
 	rpc EditRackWithoutMoving (IncreaseRackReq) returns (IncreaseRackResp);
@@ -25,6 +27,13 @@ message CreateSlotsResp{
 	repeated string slotIds=1;
 }
 
+message EmptySlotBySKUReq{
+	string SKU=1;
+}
+message EmptySlotBySKUResp{
+	bool succes=1;
+}
+
 message EditRackReq{
 	string rackId=1;
 	int32 maxX=2;
@@ -33,6 +42,15 @@ message EditRackReq{
 message EditRackResp{
 	bool succes=1;
 }
+
+message EditSlotBySKUReq{
+	string SKU=1;
+	string NewSKU=2;
+}
+message EditSlotBySKUResp{
+	bool succes=1;
+}
+
 
 message IncreaseRackReq{
 	string rackId=1;
@@ -63,8 +81,8 @@ message GetSlotBySKUReq{
 	string SKU=1;
 }
 message GetSlotBySKUResp{
-	string slotId=1;
-	string rackId=2;
+	string rackId=1;
+	string place=2;
 }
 
 message MoveProdFromDelReq{

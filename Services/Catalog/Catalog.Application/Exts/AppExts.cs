@@ -17,6 +17,7 @@ namespace Catalog.Application.Exts
                 config.RegisterServicesFromAssemblies(assembly);
                 //config.AddOpenBehavior(typeof)
             });
+
             services.AddMarten(opts =>
             {
                 opts.Connection(config.GetConnectionString("CatalogDatabase"));
