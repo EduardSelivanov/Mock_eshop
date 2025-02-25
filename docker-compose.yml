@@ -37,6 +37,13 @@ services:
   - "5433:5432"
   volumes:
    - postgres_catalog:/var/lib/postgresql/data/
+ 
+ cache:
+  image: redis
+  container_name: slotscache
+  restart: always
+  ports:
+   - "6379:6379" 
    
 networks:
  warehousemicroservices:

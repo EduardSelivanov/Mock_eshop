@@ -15,8 +15,12 @@ service SlotsProtoService{
 	rpc MoveProdsFromDel (MoveProdFromDelReq) returns (MoveProdFromDelResp);
 	rpc EditRackAndMoveProds (EditRackReq) returns (EditRackResp);
 	rpc EditRackWithoutMoving (IncreaseRackReq) returns (IncreaseRackResp);
+	rpc GetQuntityBySKU (GetSlotBySKUReq) returns (GetQuantityBySKUResp);
 }
 
+message GetQuantityBySKUResp{
+	int32 quantity=1;
+}
 
 message CreateSlotsReq{
 	string rackId=1;

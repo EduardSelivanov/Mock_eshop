@@ -1,11 +1,11 @@
 ﻿using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
-using SlotsService.Data;
 using SlotsService.Models;
+using SlotsService.Repos;
 
 namespace SlotsService.Services
 {
-    public class SlotService(SlotsContext _context) :SlotsProtoService.SlotsProtoServiceBase
+    public class SlotService(ISlotRepo _slotRepo) :SlotsProtoService.SlotsProtoServiceBase
     {
         public override async Task<CreateSlotsResp> CreateSlotsForRack(CreateSlotsReq request, ServerCallContext context)
         {
@@ -25,8 +25,7 @@ namespace SlotsService.Services
                     });
                 }
             }
-            _context.SlotsTable.AddRange(slots);
-            await _context.SaveChangesAsync();
+            await _slotRepo.CreateSLots(slots);
 
             return new CreateSlotsResp
             {
@@ -38,8 +37,7 @@ namespace SlotsService.Services
         {
             List<SlotModel> slots = new List<SlotModel>();
 
-            List<SlotModel> existingSlots = await _context.SlotsTable
-                .Where(slot => slot.OnRackId == Guid.Parse(request.RackId)).ToListAsync();
+            List<SlotModel> existingSlots = await _slotRepo.GetSlotsByRack(Guid.Parse(request.RackId));
 
             HashSet<(int, int)> existingSlotsHS = existingSlots.Select(slot => (slot.X, slot.Y)).ToHashSet();
            
@@ -65,20 +63,17 @@ namespace SlotsService.Services
 
                     }
                 }
-            _context.SlotsTable.AddRange(slots);
-            await _context.SaveChangesAsync();
-
+            await _slotRepo.CreateSLots(slots);
+            await _slotRepo.SaveChanges();
             return new IncreaseRackResp
             {
                 Succes = true
-            };
+            }; 
         }
 
         public override async Task<EditRackResp> EditRackAndMoveProds(EditRackReq request, ServerCallContext context)
         {
-            List<SlotModel> slotsOnThisRack = await _context.SlotsTable
-                .Where(slot => slot.OnRackId.Equals(Guid.Parse(request.RackId)))
-                .ToListAsync(); //all slots on this rack
+            List<SlotModel> slotsOnThisRack = await _slotRepo.GetSlotsByRack(Guid.Parse(request.RackId));//all slots on this rack
 
             //need to find slots above max  
             List<SlotModel> slotsAboveMAxOnThisRack=slotsOnThisRack
@@ -93,9 +88,7 @@ namespace SlotsService.Services
                 .Where(slot => !slot.IsFree).ToList();
 
             //All free slots and after remove empty slots which are above
-            List<SlotModel> FreeSlotsTotal = await _context.SlotsTable
-                 .Where(slot => slot.IsFree)
-                 .ToListAsync();
+            List<SlotModel> FreeSlotsTotal = await _slotRepo.GetFreeSlots(true);
 
             FreeSlotsTotal.RemoveAll(freeSlot => freeSlotsAboveMaxOnThisRack
                 .Select(slot => slot.SlotId)
@@ -107,7 +100,6 @@ namespace SlotsService.Services
                 return new EditRackResp { Succes = false };
             }
 
-
             for(int i = 0; i < busySlotsAboveMaxOnThisRack.Count; i++)
             {
                 FreeSlotsTotal[i].SKU = busySlotsAboveMaxOnThisRack[i].SKU;
@@ -115,20 +107,18 @@ namespace SlotsService.Services
                 FreeSlotsTotal[i].ArriveDate = busySlotsAboveMaxOnThisRack[i].ArriveDate;
             }
 
-            _context.RemoveRange(busySlotsAboveMaxOnThisRack);
-            _context.RemoveRange(freeSlotsAboveMaxOnThisRack);
-            await _context.SaveChangesAsync();
+            await _slotRepo.RemoveSlots(busySlotsAboveMaxOnThisRack);
+            await _slotRepo.RemoveSlots(freeSlotsAboveMaxOnThisRack);
+            await _slotRepo.SaveChanges();
 
             return new EditRackResp { Succes = true };
         }
 
         public override async Task<MoveProdFromDelResp> MoveProdsFromDel(MoveProdFromDelReq request, ServerCallContext context)
         {
-            List<SlotModel> slotsToMove = await _context.SlotsTable
-                .Where(s=>s.OnRackId.Equals(Guid.Parse(request.RackId))
-                && s.SKU!=null).ToListAsync();
+            List<SlotModel> slotsToMove = await _slotRepo.GetSlotsByRack(Guid.Parse(request.RackId),true);
 
-            List<SlotModel> FreeSlots = await _context.SlotsTable.Where(s => s.IsFree).ToListAsync();
+            List<SlotModel> FreeSlots = await _slotRepo.GetFreeSlots(true);
 
             if (FreeSlots.Count < slotsToMove.Count)
             {
@@ -142,10 +132,7 @@ namespace SlotsService.Services
                 FreeSlots[i].IsFree = false;
 
             }
-
-            _context.SlotsTable.RemoveRange(slotsToMove);
-            await _context.SaveChangesAsync();
-
+            await _slotRepo.RemoveSlots(slotsToMove);
             return new MoveProdFromDelResp() {Succes=true};
         }
 
@@ -154,7 +141,8 @@ namespace SlotsService.Services
         {
             DateTime dats = request.Date.ToDateTime();
             DateOnly datonl = DateOnly.FromDateTime(dats);
-            SlotModel freeSlot = await _context.SlotsTable.FirstOrDefaultAsync(slot => slot.IsFree);
+            //SlotModel freeSlot = await _context.SlotsTable.FirstOrDefaultAsync(slot => slot.IsFree);
+            SlotModel freeSlot = await _slotRepo.GetFreeSlot();
 
             if (freeSlot == null)
             {
@@ -163,8 +151,7 @@ namespace SlotsService.Services
             freeSlot.SKU = request.SKU;
             freeSlot.ArriveDate = datonl;
             freeSlot.IsFree = false;
-
-            await _context.SaveChangesAsync();
+            await _slotRepo.SaveChanges();
 
             return new AssignProdResp { Succes = true };
         }
@@ -172,11 +159,7 @@ namespace SlotsService.Services
         public override async Task<GetSlotBySKUResp> GetSlotBySKU(GetSlotBySKUReq request, ServerCallContext context)
         {
             //need to return oldest sku
-            SlotModel? oldest =await _context.SlotsTable
-                .AsNoTracking()
-                .Where(slot=>slot.SKU.Equals(request.SKU))
-                .OrderBy(slot=>slot.ArriveDate)
-                .FirstOrDefaultAsync();
+            SlotModel? oldest = await _slotRepo.GetSlotBySKU(request.SKU);
 
             if (oldest == null)
             {
@@ -192,9 +175,11 @@ namespace SlotsService.Services
 
         public override async Task<EditSlotBySKUResp> EditSlotBySKU(EditSlotBySKUReq request, ServerCallContext context)
         {
-            var slots = await _context.SlotsTable.Where(slot=>slot.SKU.Equals(request.SKU)).ToListAsync();
+            //var slots = await _context.SlotsTable.Where(slot=>slot.SKU.Equals(request.SKU)).ToListAsync();
+            var slots = await _slotRepo.GetSlotsBySKU(request.SKU);
+
             slots.ForEach(slot => slot.SKU = request.NewSKU);
-            await _context.SaveChangesAsync();
+            await _slotRepo.SaveChanges();
 
             return new EditSlotBySKUResp()
             {
@@ -204,7 +189,7 @@ namespace SlotsService.Services
 
         public override async Task<EmptySlotBySKUResp> EmptySlotBySKU(EmptySlotBySKUReq request, ServerCallContext context)
         {
-            List<SlotModel> slotsToClear = await _context.SlotsTable.Where(slot => slot.SKU.Equals(request.SKU)).ToListAsync();
+            List<SlotModel> slotsToClear = await _slotRepo.GetSlotsBySKU(request.SKU);
 
             slotsToClear.ForEach(slot => {
                 slot.SKU = null; 
@@ -212,8 +197,19 @@ namespace SlotsService.Services
                 slot.IsFree = true;
             });
 
-            await _context.SaveChangesAsync();
+            await _slotRepo.SaveChanges();
             return new EmptySlotBySKUResp { Succes = true };
+        }
+
+        public override async Task<GetQuantityBySKUResp> GetQuntityBySKU(GetSlotBySKUReq request, ServerCallContext context)
+        {
+            //var slots = await _slotRepo.GetSlotsBySKU(request.SKU);
+            var slots = await _slotRepo.GetFreeSlots();
+            return new GetQuantityBySKUResp
+            {
+                Quantity=slots.Count()
+            };
+            
         }
     }
 }

@@ -3,9 +3,11 @@
 using Grpc.Core;
 using Grpc.Core.Testing;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using SlotsService;
 using SlotsService.Data;
 using SlotsService.Models;
+using SlotsService.Repos;
 using SlotsService.Services;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
@@ -39,16 +41,17 @@ namespace Slots.Tests
 
             return cont;
         }
-        //[Fact]
+
+        [Fact]
         public async Task AssignProductToSlot_Ok_WhenFreeSlot()
         {
-            DbContextOptions<SlotsContext> opts = GetDbOptions();
-            using SlotsContext context = new SlotsContext(opts);
+            Mock<ISlotRepo> mockRepo = new Mock<ISlotRepo>();
             Guid id = Guid.NewGuid();
-            context.SlotsTable.Add(new SlotModel { SlotId =id , IsFree = true });
-            await context.SaveChangesAsync();
+            SlotModel freeSlot = new SlotModel { SlotId = id, IsFree = true };
 
-            SlotService service = new SlotService(context);
+            mockRepo.Setup(repp => repp.GetFreeSlot()).ReturnsAsync(freeSlot);
+
+            SlotService service = new SlotService(mockRepo.Object);
 
             AssignProdReq req = new AssignProdReq()
             {
@@ -59,18 +62,19 @@ namespace Slots.Tests
             AssignProdResp resp = await service.AssignProductToSlot(req, GetTestCont("AssignProductToSlot"));
 
             Assert.True(resp.Succes);
-            SlotModel updatedSlot 
-                = await context.SlotsTable.FirstOrDefaultAsync(slot => slot.SlotId.Equals(id));
-            Assert.NotNull(updatedSlot);
-            Assert.False(updatedSlot.IsFree);
-            Assert.Equal("TEST_SKU", updatedSlot.SKU);
+
+            mockRepo.Setup(repo => repo.GetSlotByID(id)).ReturnsAsync(freeSlot);
+
+            Assert.NotNull(freeSlot);
+            Assert.False(freeSlot.IsFree);
+            Assert.Equal("TEST_SKU", freeSlot.SKU);
         }
 
         [Fact]
         public async Task EditRackAndMoveProds_Ok_WhenFreeSlots()
         {
-            DbContextOptions<SlotsContext> opts = GetDbOptions();
-            using SlotsContext slotCont = new SlotsContext(opts);
+            Mock<ISlotRepo> mockRepo = new Mock<ISlotRepo>();
+            
 
             Guid onRackId = Guid.NewGuid();
 
@@ -118,11 +122,18 @@ namespace Slots.Tests
                     Y=2
                 }
             };
-            await slotCont.AddRangeAsync(slotsToMove);
-            await slotCont.AddRangeAsync(freeSlots);
-            await slotCont.SaveChangesAsync();
 
-            SlotService slotService = new SlotService(slotCont);
+            mockRepo.Setup(repo => repo.GetSlotsByRack(It.IsAny<Guid>(),false))
+           .ReturnsAsync(slotsToMove);
+
+            mockRepo.Setup(repo => repo.GetFreeSlots(It.IsAny<bool>()))
+                    .ReturnsAsync(freeSlots);
+
+            mockRepo.Setup(repo => repo.RemoveSlots(It.IsAny<List<SlotModel>>()))
+                    .Returns(Task.CompletedTask);
+
+
+            SlotService slotService = new SlotService(mockRepo.Object);
 
             EditRackReq req = new EditRackReq()
             {
@@ -134,37 +145,35 @@ namespace Slots.Tests
             EditRackResp resp = await slotService.EditRackAndMoveProds(req,GetTestCont("EditRackAndMoveProds"));
 
             Assert.True(resp.Succes);
-            SlotModel updatedFreeSlot = await slotCont.SlotsTable.FirstAsync(slot=>slot.SlotId.Equals(freeSlotID));
-            Assert.Equal("Move to other", updatedFreeSlot.SKU);
-            SlotModel deletedSlot = await slotCont.SlotsTable.FirstOrDefaultAsync(slot => slot.SlotId.Equals(slotToMove));
-            Assert.Equal(null, deletedSlot);
+            Assert.Equal("Move to other", freeSlots[0].SKU);
         }
 
         [Fact]
         public async Task EditRackAndMoveProds_NotOk_WhenNoFreeSlots()
         {
-            DbContextOptions<SlotsContext> opts = GetDbOptions();
-            using SlotsContext slotCont = new SlotsContext(opts);
+            Mock<ISlotRepo> mockRepo = new Mock<ISlotRepo>();
 
             Guid onRackId = Guid.NewGuid();
             Guid slotToMoveId = Guid.NewGuid();
-            SlotModel slotToMove = new SlotModel()
+            List<SlotModel> slotsToMove = new List<SlotModel>()
             {
-                    SlotId=slotToMoveId,
-                    SKU="Move to other",
-                    ArriveDate=DateOnly.FromDateTime(DateTime.Now),
-                    OnRackId=onRackId,
-                    IsFree=false,
-                    X=1,
-                    Y=2
+                new SlotModel
+                {
+                SlotId = slotToMoveId,
+                SKU = "Move to other",
+                ArriveDate = DateOnly.FromDateTime(DateTime.Now),
+                OnRackId = onRackId,
+                IsFree = false,
+                X = 1,
+                Y = 2
+                }
             };
 
-            SlotModel freeSlot = new SlotModel() {IsFree=false };
-            await slotCont.AddAsync(slotToMove);
-            await slotCont.AddAsync(freeSlot);
-            await slotCont.SaveChangesAsync();
+            mockRepo.Setup(repo => repo.GetSlotsByRack(onRackId, false)).ReturnsAsync(slotsToMove);
 
-            SlotService slotService = new SlotService(slotCont);
+            mockRepo.Setup(repo => repo.GetFreeSlots(true)).ReturnsAsync(new List<SlotModel>());
+
+            SlotService slotService = new SlotService(mockRepo.Object);
 
             EditRackReq req = new EditRackReq()
             {

@@ -13,6 +13,7 @@ namespace Catalog.Presentation.Exts
             services.AddSingleton<ICarterModule, GetProductBySKUEndpoint>();
             services.AddSingleton<ICarterModule, UpdateProductBySKUEndpoint>();
             services.AddSingleton<ICarterModule, DeleteProductBySKUEndpoint>();
+            services.AddSingleton<ICarterModule, GetQuantityBySKUEndpoint>();
         }
     }
 }
