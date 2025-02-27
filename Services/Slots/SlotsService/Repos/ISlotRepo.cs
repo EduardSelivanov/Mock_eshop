@@ -11,7 +11,7 @@ namespace SlotsService.Repos
         Task<SlotModel?> GetSlotBySKU(string sku);
         Task<SlotModel?> GetSlotByID(Guid slotId);
         Task<List<SlotModel>> GetSlotsByRack(Guid rackId, bool forEditing = false);
-        Task<List<SlotModel>> GetSlotsBySKU(string sku);
+        Task<List<SlotModel>> GetSlotsBySKU(string sku,int quantity = 0);
         Task RemoveSlots(List<SlotModel> slotsToRemove);
         Task SaveChanges();
     }

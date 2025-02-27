@@ -29,7 +29,7 @@ namespace Catalog.Application.CQRS.ProductCQRS.Commands
             };
 
             AssignProdResp resp = await _grpcClient.AssignProductToSlotAsync(toWarehouse);
-            if (!resp.Succes)
+            if (!resp.Success)
             {
                 return CustomResult<string>.Failure("No free space in warehouse.");
             }

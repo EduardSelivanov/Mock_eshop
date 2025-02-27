@@ -30,7 +30,7 @@ namespace Catalog.Application.CQRS.ProductCQRS.Commands
                     NewSKU = request.newSKU
                 };
                 var r = await _grpcClient.EditSlotBySKUAsync(req);
-                if (!r.Succes)
+                if (!r.Success)
                 {
                     return CustomResult<string>.Failure("Unable to update SKU");
                 }

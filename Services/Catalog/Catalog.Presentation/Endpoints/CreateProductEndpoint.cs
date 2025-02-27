@@ -1,5 +1,4 @@
-﻿
-using Catalog.Application.CQRS.ProductCQRS.Commands;
+﻿using Catalog.Application.CQRS.ProductCQRS.Commands;
 using CommonPractices.Carter;
 using CommonPractices.ResultHandler;
 using MediatR;

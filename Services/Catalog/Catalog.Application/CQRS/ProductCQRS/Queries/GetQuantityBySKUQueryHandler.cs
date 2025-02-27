@@ -11,7 +11,8 @@ namespace Catalog.Application.CQRS.ProductCQRS.Queries
         public async Task<CustomResult<int>> Handle(GetQuantityBySKU request, CancellationToken cancellationToken)
         {
             var r = await _grpcClient.GetQuntityBySKUAsync(new GetSlotBySKUReq { SKU = request.sku });
-            return CustomResult<int>.Success(r.Quntity);
+            // for testing returns TOTAL of free slots
+            return CustomResult<int>.Success(r.Quantity);
         }
     }
 }

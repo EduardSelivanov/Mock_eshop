@@ -19,9 +19,9 @@ namespace Catalog.Application.CQRS.ProductCQRS.Commands
             {
                 throw new ProductNotFound(request.sku);
             }
-            EmptySlotBySKUReq req = new EmptySlotBySKUReq{SKU=request.sku};
-            EmptySlotBySKUResp resp = await _grpc.EmptySlotBySKUAsync(req);
-            if (!resp.Succes)
+            EmptySlotsBySKUReq req = new EmptySlotsBySKUReq{ SKU=request.sku};
+            EmptySlotsBySKUResp resp = await _grpc.EmptySlotsBySKUAsync(req);
+            if (!resp.Success)
             {
                 CustomResult<bool>.Failure("Some error in GRPC");
             }

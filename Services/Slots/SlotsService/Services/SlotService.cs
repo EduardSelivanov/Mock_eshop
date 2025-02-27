@@ -59,15 +59,13 @@ namespace SlotsService.Services
                         X = x,
                         Y = y
                     });
-                    
-
                     }
                 }
             await _slotRepo.CreateSLots(slots);
             await _slotRepo.SaveChanges();
             return new IncreaseRackResp
             {
-                Succes = true
+                Success = true
             }; 
         }
 
@@ -122,7 +120,7 @@ namespace SlotsService.Services
 
             if (FreeSlots.Count < slotsToMove.Count)
             {
-                return new MoveProdFromDelResp { Succes = false };
+                return new MoveProdFromDelResp { Success = false };
             }
 
             for(int i = 0; i < slotsToMove.Count; i++)
@@ -133,7 +131,7 @@ namespace SlotsService.Services
 
             }
             await _slotRepo.RemoveSlots(slotsToMove);
-            return new MoveProdFromDelResp() {Succes=true};
+            return new MoveProdFromDelResp() {Success=true};
         }
 
 
@@ -146,35 +144,37 @@ namespace SlotsService.Services
 
             if (freeSlot == null)
             {
-                return new AssignProdResp { Succes = false };
+                return new AssignProdResp { Success = false };
             }
             freeSlot.SKU = request.SKU;
             freeSlot.ArriveDate = datonl;
             freeSlot.IsFree = false;
             await _slotRepo.SaveChanges();
 
-            return new AssignProdResp { Succes = true };
+            return new AssignProdResp { Success = true };
         }
 
         public override async Task<GetSlotBySKUResp> GetSlotBySKU(GetSlotBySKUReq request, ServerCallContext context)
         {
-            //need to return oldest sku
-            SlotModel? oldest = await _slotRepo.GetSlotBySKU(request.SKU);
+            List<SlotModel> oldest = await _slotRepo.GetSlotsBySKU(request.SKU,request.Count);
 
             if (oldest == null)
             {
-                return null;
+                throw new RpcException(new Status(StatusCode.NotFound, "No such GOOD against this sku"));
             }
+
             GetSlotBySKUResp resp = new GetSlotBySKUResp()
             {
-                RackId=oldest.OnRackId.ToString(),
-                Place=oldest.Place
+                SlotId = {oldest.Select(x => x.SlotId.ToString())},
+                Place = {oldest.Select(x=>x.Place)},
+                Total=oldest.Count()
             };
             return resp;
         }
 
         public override async Task<EditSlotBySKUResp> EditSlotBySKU(EditSlotBySKUReq request, ServerCallContext context)
         {
+
             //var slots = await _context.SlotsTable.Where(slot=>slot.SKU.Equals(request.SKU)).ToListAsync();
             var slots = await _slotRepo.GetSlotsBySKU(request.SKU);
 
@@ -183,13 +183,13 @@ namespace SlotsService.Services
 
             return new EditSlotBySKUResp()
             {
-                Succes = true
+                Success = true
             };            
         }
 
-        public override async Task<EmptySlotBySKUResp> EmptySlotBySKU(EmptySlotBySKUReq request, ServerCallContext context)
+        public override async Task<EmptySlotByIDResp> EmptySlotByID(EmptySlotByIDReq request, ServerCallContext context)
         {
-            List<SlotModel> slotsToClear = await _slotRepo.GetSlotsBySKU(request.SKU);
+            List<SlotModel> slotsToClear = await _slotRepo.GetSlotsBySKU("asd");
 
             slotsToClear.ForEach(slot => {
                 slot.SKU = null; 
@@ -198,8 +198,32 @@ namespace SlotsService.Services
             });
 
             await _slotRepo.SaveChanges();
-            return new EmptySlotBySKUResp { Succes = true };
+            return new EmptySlotByIDResp { Success = true };
         }
+
+        public override async Task<EmptySlotsBySKUResp> EmptySlotsBySKU(EmptySlotsBySKUReq request, ServerCallContext context)
+        {
+            List<SlotModel> slotsToClear = await _slotRepo.GetSlotsBySKU(request.SKU);
+
+            slotsToClear.ForEach(slot => {
+                slot.SKU = null;
+                slot.ArriveDate = null;
+                slot.IsFree = true;
+            });
+
+            await _slotRepo.SaveChanges();
+            return new EmptySlotsBySKUResp { Success = true };
+        }
+
+        public override async Task<EditSlotByIdResp> EditSlotByID(EditSlotByIDReq request, ServerCallContext context)
+        {
+            SlotModel slotToEdit = await _slotRepo.GetSlotByID(Guid.Parse(request.SlotId));
+            slotToEdit.IsBooked = true;
+            await _slotRepo.SaveChanges();
+
+            return new EditSlotByIdResp() {Success=true };
+        }
+
 
         public override async Task<GetQuantityBySKUResp> GetQuntityBySKU(GetSlotBySKUReq request, ServerCallContext context)
         {

@@ -29,6 +29,7 @@ namespace SlotsService.Repos
 
             return freeSlots;
         }
+
         public async Task<List<SlotModel>> GetSlotsByRack(Guid rackId, bool forEditing = false)
         {
             string cachedSlotsOnThisRack = await _cache.GetStringAsync($"{rackId.ToString()}");
@@ -80,13 +81,9 @@ namespace SlotsService.Repos
             return await _repo.GetSlotBySKU(sku);
         }
 
-        public async Task<List<SlotModel>> GetSlotsBySKU(string sku)
+        public async Task<List<SlotModel>> GetSlotsBySKU(string sku,int p=0)
         {
-            return await _repo.GetSlotsBySKU(sku);
+            return await _repo.GetSlotsBySKU(sku,p);
         }
-
-        
-
-       
     }
 }

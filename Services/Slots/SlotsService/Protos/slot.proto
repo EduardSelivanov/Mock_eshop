@@ -6,16 +6,26 @@ option csharp_namespace = "SlotsService";
 package slot;
 
 service SlotsProtoService{
+
+	//for WareHouse
 	rpc CreateSlotsForRack (CreateSlotsReq) returns (CreateSlotsResp);
 	rpc AssignProductToSlot (AssignProdReq) returns (AssignProdResp);
 	rpc GetAvaliableSlot (GetAvailableSlotReq) returns (GetAvailableSlotResp);
-	rpc GetSlotBySKU (GetSlotBySKUReq) returns (GetSlotBySKUResp);
-	rpc EditSlotBySKU (EditSlotBySKUReq) returns (EditSlotBySKUResp);
-	rpc EmptySlotBySKU (EmptySlotBySKUReq) returns (EmptySlotBySKUResp);
 	rpc MoveProdsFromDel (MoveProdFromDelReq) returns (MoveProdFromDelResp);
 	rpc EditRackAndMoveProds (EditRackReq) returns (EditRackResp);
 	rpc EditRackWithoutMoving (IncreaseRackReq) returns (IncreaseRackResp);
+
+
+	// for Ordering 
+	rpc GetSlotBySKU (GetSlotBySKUReq) returns (GetSlotBySKUResp);
+	rpc EmptySlotByID (EmptySlotByIDReq) returns (EmptySlotByIDResp);
+	rpc EditSlotByID (EditSlotByIDReq) returns (EditSlotByIdResp);
+
+	//for Catalog
+	rpc EmptySlotsBySKU (EmptySlotsBySKUReq) returns (EmptySlotsBySKUResp); 
 	rpc GetQuntityBySKU (GetSlotBySKUReq) returns (GetQuantityBySKUResp);
+	rpc EditSlotBySKU (EditSlotBySKUReq) returns (EditSlotBySKUResp);
+	
 }
 
 message GetQuantityBySKUResp{
@@ -30,12 +40,26 @@ message CreateSlotsReq{
 message CreateSlotsResp{
 	repeated string slotIds=1;
 }
-
-message EmptySlotBySKUReq{
+message EmptySlotsBySKUReq{
 	string SKU=1;
 }
-message EmptySlotBySKUResp{
-	bool succes=1;
+message EmptySlotsBySKUResp{
+	bool success=1;
+}
+
+message EditSlotByIDReq{
+	string slotId=1;
+}
+message EditSlotByIdResp{
+	bool success=1;
+}
+
+
+message EmptySlotByIDReq{
+	string id=1;
+}
+message EmptySlotByIDResp{
+	bool success=1;
 }
 
 message EditRackReq{
@@ -52,7 +76,7 @@ message EditSlotBySKUReq{
 	string NewSKU=2;
 }
 message EditSlotBySKUResp{
-	bool succes=1;
+	bool success=1;
 }
 
 
@@ -64,7 +88,7 @@ message IncreaseRackReq{
 	int32 newY=5;
 } 
 message IncreaseRackResp{
-	bool succes=1;
+	bool success=1;
 }
 
 
@@ -73,7 +97,7 @@ message AssignProdReq{
 	google.protobuf.Timestamp date=2;
 }
 message AssignProdResp{
-	bool succes=1;
+	bool success=1;
 }
 
 message GetAvailableSlotReq{}
@@ -83,10 +107,12 @@ message GetAvailableSlotResp{
 
 message GetSlotBySKUReq{
 	string SKU=1;
+	int32 count=2;
 }
 message GetSlotBySKUResp{
-	string rackId=1;
-	string place=2;
+	repeated string slotId=1;
+	repeated string place=2;
+	int32 total=3;
 }
 
 message MoveProdFromDelReq{
@@ -94,5 +120,5 @@ message MoveProdFromDelReq{
 	int32 placesTodel=2;
 }
 message MoveProdFromDelResp{
-	bool succes=1;
+	bool success=1;
 }

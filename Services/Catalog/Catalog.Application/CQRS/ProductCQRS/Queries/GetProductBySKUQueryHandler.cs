@@ -22,7 +22,7 @@ namespace Catalog.Application.CQRS.ProductCQRS.Queries
                 return CustomResult<string>.Failure("No products on warehouse");
             }
 
-            string responseToClient = $"Your produsct {request.sku} is on Rack {resonse.RackId} on place {resonse.Place}";
+            string responseToClient = $"Your produsct {request.sku} is on Rack  on place {resonse.Place}";
 
 
             return CustomResult<string>.Success(responseToClient);

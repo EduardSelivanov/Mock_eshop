@@ -42,18 +42,39 @@ namespace SlotsService.Repos
         {
             return await _context.SlotsTable.FirstOrDefaultAsync(slot => slot.IsFree); ;
         }
+
+
         public async Task<SlotModel?> GetSlotBySKU(string sku) =>
             await _context.SlotsTable.AsNoTracking()
             .Where(slot => slot.SKU.Equals(sku))
             .OrderBy(slot => slot.ArriveDate)
             .FirstOrDefaultAsync();
 
-        public async Task<List<SlotModel>> GetSlotsBySKU(string sku) =>
-            await _context.SlotsTable.Where(slot => slot.SKU.Equals(sku)).ToListAsync();
-
         public async Task<SlotModel?> GetSlotByID(Guid slotId)
         {
-            return await _context.SlotsTable.FirstOrDefaultAsync(slot=>slot.SlotId.Equals(slotId));
+            return await _context.SlotsTable.FirstOrDefaultAsync(slot => slot.SlotId.Equals(slotId));
         }
+
+        public async Task<List<SlotModel>> GetSlotsBySKU(string sku,int quantity=0)
+        {
+            if (quantity != 0)
+            {
+                try
+                {
+                    return await _context.SlotsTable.AsNoTracking()
+                     .Where(slot => (slot.SKU.Equals(sku)&&!slot.IsBooked))
+                     .OrderBy(slot => slot.ArriveDate)
+                     .Take(quantity)
+                     .ToListAsync();
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+            return  await _context.SlotsTable.Where(slot => slot.SKU.Equals(sku)).ToListAsync();
+        }
+
+       
     }
 }

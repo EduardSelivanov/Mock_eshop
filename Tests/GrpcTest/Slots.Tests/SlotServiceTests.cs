@@ -1,6 +1,4 @@
-﻿
-
-using Grpc.Core;
+﻿using Grpc.Core;
 using Grpc.Core.Testing;
 using Microsoft.EntityFrameworkCore;
 using Moq;
@@ -9,18 +7,17 @@ using SlotsService.Data;
 using SlotsService.Models;
 using SlotsService.Repos;
 using SlotsService.Services;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Slots.Tests
 {
     public class SlotServiceTests
     {
-        private DbContextOptions<SlotsContext> GetDbOptions()
-        {
-            string someDBName = $"DBName+{Guid.NewGuid().ToString()}";
-            return new DbContextOptionsBuilder<SlotsContext>()
-                .UseInMemoryDatabase(someDBName).Options;
-        }
+        //private DbContextOptions<SlotsContext> GetDbOptions()
+        //{
+        //    string someDBName = $"DBName+{Guid.NewGuid().ToString()}";
+        //    return new DbContextOptionsBuilder<SlotsContext>()
+        //        .UseInMemoryDatabase(someDBName).Options;
+        //}
 
         private ServerCallContext GetTestCont(string MethodName)
         {
@@ -61,7 +58,7 @@ namespace Slots.Tests
 
             AssignProdResp resp = await service.AssignProductToSlot(req, GetTestCont("AssignProductToSlot"));
 
-            Assert.True(resp.Succes);
+            Assert.True(resp.Success);
 
             mockRepo.Setup(repo => repo.GetSlotByID(id)).ReturnsAsync(freeSlot);
 

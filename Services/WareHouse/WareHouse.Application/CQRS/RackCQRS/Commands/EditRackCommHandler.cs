@@ -33,7 +33,7 @@ namespace WareHouse.Application.CQRS.RackCQRS.Commands
                 };
 
                 IncreaseRackResp resp = await _grpcClient.EditRackWithoutMovingAsync(increase);
-                if (!resp.Succes)
+                if (!resp.Success)
                 {
                     return false;
                 }
