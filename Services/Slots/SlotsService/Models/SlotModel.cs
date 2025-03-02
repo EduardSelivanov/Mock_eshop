@@ -7,6 +7,7 @@
         public string? SKU { get; set; }
         public DateOnly? ArriveDate { get; set; }
         public bool IsBooked { get; set; } = false;
+        public DateOnly? BookedTill { get; set;} 
         public bool IsFree { get; set; } = true;
 
         public int X { get; set; } // by width

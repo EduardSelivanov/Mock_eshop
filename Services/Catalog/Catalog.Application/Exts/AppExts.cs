@@ -1,6 +1,4 @@
-﻿
-using Catalog.Application.MassTransit;
-using Elastic.CommonSchema;
+﻿using Catalog.Application.MassTransit;
 using Marten;
 using MassTransit;
 using Microsoft.Extensions.Configuration;
@@ -31,9 +29,13 @@ namespace Catalog.Application.Exts
                 client.Address = new Uri("https://localhost:7298");
             });
 
+
+
+
             services.AddMassTransit(x =>
             {
                 x.AddConsumer<OrderCreatedConsumer>();
+                x.AddConsumer<FinishOrderConsumer>();
 
                 x.UsingRabbitMq((context, cfg) =>
                 {
@@ -46,6 +48,10 @@ namespace Catalog.Application.Exts
                     cfg.ReceiveEndpoint("order_created_queue", e =>
                     {
                         e.ConfigureConsumer<OrderCreatedConsumer>(context);
+                    });
+                    cfg.ReceiveEndpoint("finish_payment", e =>
+                    {
+                        e.ConfigureConsumer<FinishOrderConsumer>(context);
                     });
                 });
             });

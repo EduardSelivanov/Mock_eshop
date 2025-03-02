@@ -16,9 +16,9 @@ namespace Ordering.Presentation.Endpoints
                 try
                 {
                     CreateOrderAMQ orderspecs = 
-                    new CreateOrderAMQ(new List<OrderItemAMQ>{new OrderItemAMQ("first", 2)});
+                    new CreateOrderAMQ(new List<OrderItemAMQ>{new OrderItemAMQ("first", 1)});
 
-                    await service.SendToRabbitMQ(orderspecs);
+                    await service.SendRequestForOrderMQ(orderspecs);
 
                     return Results.Ok("Order created successfully!");
                 }

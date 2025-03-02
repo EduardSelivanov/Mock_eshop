@@ -2,118 +2,17 @@
 using Microsoft.EntityFrameworkCore;
 using SlotsService.Models;
 using SlotsService.Repos;
+using System.Security.AccessControl;
 
 namespace SlotsService.Services
 {
-    public class SlotService(ISlotRepo _slotRepo) :SlotsProtoService.SlotsProtoServiceBase
+    public partial class SlotService(ISlotRepo _slotRepo) :SlotsProtoService.SlotsProtoServiceBase
     {
-        public override async Task<CreateSlotsResp> CreateSlotsForRack(CreateSlotsReq request, ServerCallContext context)
-        {
-            List<SlotModel> slots = new List<SlotModel>();
 
-            for(int y = 1; y <= request.RackY; y++)
-            {
-                for(int x = 1; x <= request.RackX; x++)
-                {
-                    slots.Add(new SlotModel
-                    {
-                        SlotId = Guid.NewGuid(),
-                        OnRackId = Guid.Parse(request.RackId),
-                        SKU = null,
-                        X = x,
-                        Y = y
-                    });
-                }
-            }
-            await _slotRepo.CreateSLots(slots);
-
-            return new CreateSlotsResp
-            {
-                SlotIds = {slots.Select(s=>s.Place.ToString())}
-            };
-        }
-
-        public override async Task<IncreaseRackResp> EditRackWithoutMoving(IncreaseRackReq request, ServerCallContext context)
-        {
-            List<SlotModel> slots = new List<SlotModel>();
-
-            List<SlotModel> existingSlots = await _slotRepo.GetSlotsByRack(Guid.Parse(request.RackId));
-
-            HashSet<(int, int)> existingSlotsHS = existingSlots.Select(slot => (slot.X, slot.Y)).ToHashSet();
-           
-
-            for ( int y=1 ; y <= request.NewY; y++)
-            {
-                for ( int x=1 ; x <= request.NewX; x++)
-                {
-                    if (existingSlotsHS.Contains((x, y)))
-                    {
-                        continue;
-                    }
-                    
-                    slots.Add(new SlotModel
-                    {
-                        SlotId = Guid.NewGuid(),
-                        OnRackId = Guid.Parse(request.RackId),
-                        SKU = null,
-                        X = x,
-                        Y = y
-                    });
-                    }
-                }
-            await _slotRepo.CreateSLots(slots);
-            await _slotRepo.SaveChanges();
-            return new IncreaseRackResp
-            {
-                Success = true
-            }; 
-        }
-
-        public override async Task<EditRackResp> EditRackAndMoveProds(EditRackReq request, ServerCallContext context)
-        {
-            List<SlotModel> slotsOnThisRack = await _slotRepo.GetSlotsByRack(Guid.Parse(request.RackId));//all slots on this rack
-
-            //need to find slots above max  
-            List<SlotModel> slotsAboveMAxOnThisRack=slotsOnThisRack
-                .Where(slot => slot.X > request.MaxX || slot.Y > request.MaxY).ToList(); // allslots above max
-
-            // find free slots to delete it from list of empty slots
-            List<SlotModel> freeSlotsAboveMaxOnThisRack = slotsAboveMAxOnThisRack
-                .Where(slot => slot.IsFree).ToList();
-
-            //find busy slots above
-            List<SlotModel> busySlotsAboveMaxOnThisRack = slotsAboveMAxOnThisRack
-                .Where(slot => !slot.IsFree).ToList();
-
-            //All free slots and after remove empty slots which are above
-            List<SlotModel> FreeSlotsTotal = await _slotRepo.GetFreeSlots(true);
-
-            FreeSlotsTotal.RemoveAll(freeSlot => freeSlotsAboveMaxOnThisRack
-                .Select(slot => slot.SlotId)
-                .Contains(freeSlot.SlotId));
-
-            //if not enough space just refuse request
-            if (FreeSlotsTotal.Count < busySlotsAboveMaxOnThisRack.Count)
-            {
-                return new EditRackResp { Succes = false };
-            }
-
-            for(int i = 0; i < busySlotsAboveMaxOnThisRack.Count; i++)
-            {
-                FreeSlotsTotal[i].SKU = busySlotsAboveMaxOnThisRack[i].SKU;
-                FreeSlotsTotal[i].IsFree = busySlotsAboveMaxOnThisRack[i].IsFree;
-                FreeSlotsTotal[i].ArriveDate = busySlotsAboveMaxOnThisRack[i].ArriveDate;
-            }
-
-            await _slotRepo.RemoveSlots(busySlotsAboveMaxOnThisRack);
-            await _slotRepo.RemoveSlots(freeSlotsAboveMaxOnThisRack);
-            await _slotRepo.SaveChanges();
-
-            return new EditRackResp { Succes = true };
-        }
-
+       
         public override async Task<MoveProdFromDelResp> MoveProdsFromDel(MoveProdFromDelReq request, ServerCallContext context)
         {
+            // FiX FOR WH
             List<SlotModel> slotsToMove = await _slotRepo.GetSlotsByRack(Guid.Parse(request.RackId),true);
 
             List<SlotModel> FreeSlots = await _slotRepo.GetFreeSlots(true);
@@ -135,27 +34,11 @@ namespace SlotsService.Services
         }
 
 
-        public override async Task<AssignProdResp> AssignProductToSlot(AssignProdReq request, ServerCallContext context)
-        {
-            DateTime dats = request.Date.ToDateTime();
-            DateOnly datonl = DateOnly.FromDateTime(dats);
-            //SlotModel freeSlot = await _context.SlotsTable.FirstOrDefaultAsync(slot => slot.IsFree);
-            SlotModel freeSlot = await _slotRepo.GetFreeSlot();
-
-            if (freeSlot == null)
-            {
-                return new AssignProdResp { Success = false };
-            }
-            freeSlot.SKU = request.SKU;
-            freeSlot.ArriveDate = datonl;
-            freeSlot.IsFree = false;
-            await _slotRepo.SaveChanges();
-
-            return new AssignProdResp { Success = true };
-        }
+        
 
         public override async Task<GetSlotBySKUResp> GetSlotBySKU(GetSlotBySKUReq request, ServerCallContext context)
         {
+            // common for Catalog and Ordering
             List<SlotModel> oldest = await _slotRepo.GetSlotsBySKU(request.SKU,request.Count);
 
             if (oldest == null)
@@ -172,20 +55,7 @@ namespace SlotsService.Services
             return resp;
         }
 
-        public override async Task<EditSlotBySKUResp> EditSlotBySKU(EditSlotBySKUReq request, ServerCallContext context)
-        {
-
-            //var slots = await _context.SlotsTable.Where(slot=>slot.SKU.Equals(request.SKU)).ToListAsync();
-            var slots = await _slotRepo.GetSlotsBySKU(request.SKU);
-
-            slots.ForEach(slot => slot.SKU = request.NewSKU);
-            await _slotRepo.SaveChanges();
-
-            return new EditSlotBySKUResp()
-            {
-                Success = true
-            };            
-        }
+       
 
         public override async Task<EmptySlotByIDResp> EmptySlotByID(EmptySlotByIDReq request, ServerCallContext context)
         {
@@ -201,27 +71,16 @@ namespace SlotsService.Services
             return new EmptySlotByIDResp { Success = true };
         }
 
-        public override async Task<EmptySlotsBySKUResp> EmptySlotsBySKU(EmptySlotsBySKUReq request, ServerCallContext context)
-        {
-            List<SlotModel> slotsToClear = await _slotRepo.GetSlotsBySKU(request.SKU);
+       
 
-            slotsToClear.ForEach(slot => {
-                slot.SKU = null;
-                slot.ArriveDate = null;
-                slot.IsFree = true;
-            });
-
-            await _slotRepo.SaveChanges();
-            return new EmptySlotsBySKUResp { Success = true };
-        }
-
-        public override async Task<EditSlotByIdResp> EditSlotByID(EditSlotByIDReq request, ServerCallContext context)
+        public override async Task<ReserveSlotIDResp> ReserveSlotID(ReserveSlotIDReq request, ServerCallContext context)
         {
             SlotModel slotToEdit = await _slotRepo.GetSlotByID(Guid.Parse(request.SlotId));
-            slotToEdit.IsBooked = true;
+            //slotToEdit.IsBooked = true;
+            //slotToEdit.BookedTill = DateOnly.FromDateTime(DateTime.Now.AddDays(3));
             await _slotRepo.SaveChanges();
 
-            return new EditSlotByIdResp() {Success=true };
+            return new ReserveSlotIDResp() {Success=true };
         }
 
 

@@ -10,6 +10,7 @@ namespace Ordering.Presentation.Extensions
         {
             services.AddCarter();
             services.AddSingleton<ICarterModule, CreateOrderEndpoint>();
+            services.AddSingleton<ICarterModule, PayForOrderEndpoint>();
         }
     }
 }

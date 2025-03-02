@@ -1,5 +1,4 @@
-﻿
-using CommonPractices.CQRS;
+﻿using CommonPractices.CQRS;
 using WareHouse.Domain.Models;
 using WareHouse.Domain.Reopositories;
 

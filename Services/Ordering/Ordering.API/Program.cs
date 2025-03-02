@@ -14,12 +14,11 @@ namespace Ordering.API
 
             // Add services to the container.
 
-            builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
             builder.Services.AddExceptionHandler<CommonExceptionHandler>();
 
-            builder.Services.AddAppExts();
+            builder.Services.AddAppExts(builder.Configuration);
             builder.Services.AddPresentation();
 
             var app = builder.Build();
@@ -34,10 +33,10 @@ namespace Ordering.API
 
             app.UseHttpsRedirection();
 
-            app.UseAuthorization();
+           
 
 
-            app.MapControllers();
+       
 
             app.Run();
         }

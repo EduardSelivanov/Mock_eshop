@@ -13,12 +13,14 @@ namespace Catalog.Application.MassTransit
         {
             List<OrderItemAMQ> res = context.Message.orderReq; // sku quant
             List<string> goodsForOrder = new List<string>();
+            Dictionary<string, int> basket = new Dictionary<string, int>();
             decimal totalSum = 0;
 
 
             foreach (OrderItemAMQ ord in res)
             {
                 var p = session.Query<Product>().FirstOrDefault(prod => prod.SKU.Equals(ord.SKU));
+                basket[ord.SKU] = ord.Quantity;
 
                 GetSlotBySKUReq req = new GetSlotBySKUReq(){SKU=ord.SKU,Count=ord.Quantity};
                 try
@@ -27,6 +29,7 @@ namespace Catalog.Application.MassTransit
                     if (response.Total < ord.Quantity)
                     {
                         await context.RespondAsync(new SimpleMessage("Some goods arnt available"));
+                        return;
                     }
                     totalSum = totalSum + (response.SlotId.Count * p.Price);
                     goodsForOrder.AddRange(response.SlotId);
@@ -34,21 +37,27 @@ namespace Catalog.Application.MassTransit
                 catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound)
                 {
                     await context.RespondAsync(new SimpleMessage("No prods in warehouse"));
+                    return;
                 }
             }
 
             //create Order
             foreach(var id in goodsForOrder)
             {
-                EditSlotByIDReq req = new EditSlotByIDReq() {SlotId=id};
-                EditSlotByIdResp resp = await _grpc.EditSlotByIDAsync(req);
+                ReserveSlotIDReq req = new ReserveSlotIDReq() {SlotId=id};
+                ReserveSlotIDResp resp = await _grpc.ReserveSlotIDAsync(req);
                 if (!resp.Success)
                 {
                     await context.RespondAsync(new SimpleMessage("Some ErrorWith GRPC"));
+                    return;
                 }
-                await context.RespondAsync(new OrderAcceptedMessage(totalSum,Guid.NewGuid().ToString()));
             }
+            await context.RespondAsync(new OrderAcceptedMessage(Guid.NewGuid().ToString(), totalSum, basket, goodsForOrder));
+            // todo
             //
+            //fix Exceptions in Ordering
+            // SOMEHOW SOLVE SLOW RESPONSES!!
+
 
 
         }

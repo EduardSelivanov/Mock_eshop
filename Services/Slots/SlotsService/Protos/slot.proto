@@ -19,7 +19,7 @@ service SlotsProtoService{
 	// for Ordering 
 	rpc GetSlotBySKU (GetSlotBySKUReq) returns (GetSlotBySKUResp);
 	rpc EmptySlotByID (EmptySlotByIDReq) returns (EmptySlotByIDResp);
-	rpc EditSlotByID (EditSlotByIDReq) returns (EditSlotByIdResp);
+	rpc ReserveSlotID (ReserveSlotIDReq) returns (ReserveSlotIDResp);
 
 	//for Catalog
 	rpc EmptySlotsBySKU (EmptySlotsBySKUReq) returns (EmptySlotsBySKUResp); 
@@ -47,10 +47,10 @@ message EmptySlotsBySKUResp{
 	bool success=1;
 }
 
-message EditSlotByIDReq{
+message ReserveSlotIDReq{
 	string slotId=1;
 }
-message EditSlotByIdResp{
+message ReserveSlotIDResp{
 	bool success=1;
 }
 

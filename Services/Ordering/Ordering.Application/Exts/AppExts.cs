@@ -1,7 +1,7 @@
-﻿
-
-using CommonPractices.RabbitMQContracts;
+﻿using CommonPractices.RabbitMQContracts;
+using Marten;
 using MassTransit;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Ordering.Application.Services;
 
@@ -9,8 +9,13 @@ namespace Ordering.Application.Exts
 {
     public static class AppExts
     {
-        public static void AddAppExts(this IServiceCollection services)
+        public static void AddAppExts(this IServiceCollection services,IConfiguration config)
         {
+            services.AddMarten(opts =>
+            {
+                opts.Connection(config.GetConnectionString("OrderDatabase"));
+            }).UseLightweightSessions();
+
             services.AddMassTransit(x =>
             {
 
@@ -25,8 +30,11 @@ namespace Ordering.Application.Exts
                 });
                 x.AddRequestClient<CreateOrderAMQ>();
             });
+
+            
             
             services.AddScoped<RabbitService>();
+            services.AddScoped<PaymentService>();
         }
     }
 }
