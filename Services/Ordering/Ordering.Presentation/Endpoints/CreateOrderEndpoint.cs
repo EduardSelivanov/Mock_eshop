@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Ordering.Application.Services;
+using Ordering.Domain.Models;
 
 namespace Ordering.Presentation.Endpoints
 {
@@ -13,19 +14,14 @@ namespace Ordering.Presentation.Endpoints
         {
             app.MapPost("api/ordering", async (RabbitService service) =>
             {
-                try
-                {
+                
                     CreateOrderAMQ orderspecs = 
                     new CreateOrderAMQ(new List<OrderItemAMQ>{new OrderItemAMQ("first", 1)});
 
                     await service.SendRequestForOrderMQ(orderspecs);
 
                     return Results.Ok("Order created successfully!");
-                }
-                catch (Exception ex)
-                {
-                    return Results.BadRequest(new { error = ex.Message }); 
-                }
+               
             });
         }
     }

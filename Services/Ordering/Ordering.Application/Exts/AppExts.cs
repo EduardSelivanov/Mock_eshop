@@ -34,6 +34,7 @@ namespace Ordering.Application.Exts
             
             
             services.AddScoped<RabbitService>();
+            services.AddScoped<MartenService>();
             services.AddScoped<PaymentService>();
         }
     }

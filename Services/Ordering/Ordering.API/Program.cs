@@ -32,6 +32,7 @@ namespace Ordering.API
             }
 
             app.UseHttpsRedirection();
+            app.MapGraphQL("/graphql");
 
            
 

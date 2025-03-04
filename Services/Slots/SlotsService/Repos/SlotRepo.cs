@@ -54,6 +54,11 @@ namespace SlotsService.Repos
         {
             return await _context.SlotsTable.FirstOrDefaultAsync(slot => slot.SlotId.Equals(slotId));
         }
+        public async Task<List<SlotModel>> GetSlotsById()
+        {
+
+            return null;
+        }
 
         public async Task<List<SlotModel>> GetSlotsBySKU(string sku,int quantity=0)
         {

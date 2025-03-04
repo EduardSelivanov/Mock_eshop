@@ -1,6 +1,7 @@
 ﻿using Carter;
 using Microsoft.Extensions.DependencyInjection;
 using Ordering.Presentation.Endpoints;
+using Ordering.Presentation.GraphQL;
 
 namespace Ordering.Presentation.Extensions
 {
@@ -11,6 +12,11 @@ namespace Ordering.Presentation.Extensions
             services.AddCarter();
             services.AddSingleton<ICarterModule, CreateOrderEndpoint>();
             services.AddSingleton<ICarterModule, PayForOrderEndpoint>();
+
+            services.AddGraphQLServer()
+                .AddQueryType<GraphQLEndpoints>()
+                .AddMutationType<Mutations>()
+                ;// fix
         }
     }
 }
